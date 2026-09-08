@@ -1,6 +1,6 @@
 import { BASE_POSITION, TEAMMATE, TRACK_SIZE } from "./constants";
 import { forwardDestination } from "./movement";
-import { isProtectedBaseOccupied, marbleAtTrackPosition } from "./rules";
+import { isBasePosition, isProtectedBaseOccupied, marbleAtTrackPosition } from "./rules";
 import type { GameState, Marble, PlayerId } from "./types";
 
 export interface SpecialMoveResult { legal: boolean; reason?: string; capturedMarbleIds: string[]; }
@@ -9,17 +9,20 @@ function backwardPath(start: number, steps: number): number[] { return Array.fro
 
 export function checkBackwardFour(state: GameState, marble: Marble): SpecialMoveResult {
   if (marble.zone !== "TRACK" || marble.trackPosition === null) return { legal: false, reason: "Four requires a marble on the circuit", capturedMarbleIds: [] };
-  const path = backwardPath(marble.trackPosition, 4); const captures: string[] = [];
+  const path = backwardPath(marble.trackPosition, 4);
+  if (isBasePosition(path[path.length - 1])) return { legal: false, reason: "Four cannot stop on a base", capturedMarbleIds: [] };
+  const captures: string[] = [];
   for (const position of path) {
     if (isProtectedBaseOccupied(state, position, marble.id)) return { legal: false, reason: "Occupied base blocks the four", capturedMarbleIds: [] };
-    const target = marbleAtTrackPosition(state, position, marble.id); if (target) captures.push(target.id);
+    const target = marbleAtTrackPosition(state, position, marble.id);
+    if (target) captures.push(target.id);
   }
   return { legal: true, capturedMarbleIds: [...new Set(captures)] };
 }
 
 export interface SevenPart { marbleId: string; steps: number; }
 
-/** A player controls the partner only after exactly four own marbles exist and all four are home. */
+/** A player controls the partner only after all four own marbles are in arrival. */
 export function controlledOwner(state: GameState, currentPlayer: PlayerId): PlayerId {
   const own = state.marbles.filter((m) => m.owner === currentPlayer);
   const ownFinished = own.length === 4 && own.every((m) => m.zone === "FINISH");
