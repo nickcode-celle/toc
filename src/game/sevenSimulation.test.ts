@@ -18,7 +18,7 @@ describe("seven sequential control", () => {
     const state = createInitialGameState();
     state.currentPlayer = 0;
     state.marbles = [
-      finish("0-0", 0, 0), finish("0-1", 0, 1), finish("0-2", 0, 2),
+      finish("0-0", 0, 1), finish("0-1", 0, 2), finish("0-2", 0, 3),
       track("0-3", 0, 12, true),
       track("2-0", 2, 20), home("2-1", 2), home("2-2", 2), home("2-3", 2),
       home("1-0", 1), home("1-1", 1), home("1-2", 1), home("1-3", 1),
