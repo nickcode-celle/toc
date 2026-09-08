@@ -78,23 +78,29 @@ export function checkNormalForwardMove(
 
   if (destination.zone === "FINISH") {
     const ownFinishMarbles = state.marbles.filter(
-      (m) => m.owner === marble.owner && m.zone === "FINISH",
+      (m) => m.owner === marble.owner && m.zone === "FINISH" && m.id !== marble.id,
     );
 
-    // Arrival marbles cannot be passed over or landed on.
-    const start = marble.zone === "FINISH" && marble.finishPosition !== null
-      ? marble.finishPosition
-      : -1;
-    for (const other of ownFinishMarbles) {
-      if (
-        other.id !== marble.id &&
-        other.finishPosition !== null &&
-        other.finishPosition > start &&
-        other.finishPosition <= destination.finishPosition
-      ) {
+    // The destination itself must always be free.
+    if (ownFinishMarbles.some((m) => m.finishPosition === destination.finishPosition)) {
+      return {
+        legal: false,
+        reason: "Arrival destination is occupied",
+        capturedMarbleIds: [],
+      };
+    }
+
+    // When a marble is already inside the arrival lane, it cannot jump another
+    // marble. A marble entering from the circuit may jump occupied earlier
+    // arrival positions, provided its destination is free.
+    if (marble.zone === "FINISH" && marble.finishPosition !== null) {
+      const start = marble.finishPosition;
+      if (ownFinishMarbles.some(
+        (m) => m.finishPosition !== null && m.finishPosition > start && m.finishPosition < destination.finishPosition,
+      )) {
         return {
           legal: false,
-          reason: "A marble blocks the arrival lane",
+          reason: "A marble blocks movement inside the arrival lane",
           capturedMarbleIds: [],
         };
       }
