@@ -18,6 +18,12 @@ export function localPosition(owner: PlayerId, trackPosition: number): number {
   return clockwiseDistance(BASE_POSITION[owner], trackPosition);
 }
 
+/**
+ * Forward arrival rule: no lap/qualification flag is required.
+ * Whenever a forward move reaches/passes the owner's case 13 toward the
+ * arrival lane, it enters if the complete value fits in the four arrival
+ * positions. If the value is too large, the full move continues on circuit.
+ */
 export function forwardDestination(marble: Marble, steps: number): Destination | null {
   if (!Number.isInteger(steps) || steps <= 0) return null;
   if (marble.zone === "HOME") return null;
@@ -31,7 +37,7 @@ export function forwardDestination(marble: Marble, steps: number): Destination |
   if (marble.trackPosition === null) return null;
   const local = localPosition(marble.owner, marble.trackPosition);
 
-  if (marble.qualifiedForFinish && local <= FINISH_GATE_LOCAL_POSITION) {
+  if (local <= FINISH_GATE_LOCAL_POSITION) {
     const stepsToFirstFinish = FINISH_GATE_LOCAL_POSITION - local + 1;
     const finishIndex = steps - stepsToFirstFinish;
     if (finishIndex >= 0 && finishIndex < FINISH_SIZE) {
@@ -42,22 +48,7 @@ export function forwardDestination(marble: Marble, steps: number): Destination |
   return { zone: "TRACK", trackPosition: (marble.trackPosition + steps) % TRACK_SIZE };
 }
 
-/**
- * Qualification is gained when a forward move crosses the marble owner's
- * base after having left it. This records actual path crossing instead of
- * trying to infer a completed lap from the destination alone.
- *
- * Backward-4 from the owner's base is the other qualification route and is
- * set explicitly by the executor.
- */
-export function becomesQualifiedAfterForwardMove(marble: Marble, steps: number): boolean {
-  if (marble.qualifiedForFinish) return true;
-  if (marble.zone !== "TRACK" || marble.trackPosition === null || steps <= 0) return false;
-
-  const base = BASE_POSITION[marble.owner];
-  const distanceToBase = clockwiseDistance(marble.trackPosition, base);
-
-  // distanceToBase === 0 means the marble currently sits on its own base;
-  // merely leaving the base does not constitute a completed circuit.
-  return distanceToBase > 0 && distanceToBase <= steps;
+/** Legacy compatibility: arrival no longer depends on qualification. */
+export function becomesQualifiedAfterForwardMove(marble: Marble, _steps: number): boolean {
+  return marble.qualifiedForFinish;
 }
