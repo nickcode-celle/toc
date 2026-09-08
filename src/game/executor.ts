@@ -1,7 +1,7 @@
 import { BASE_POSITION, TRACK_SIZE } from "./constants";
 import { applyJackSwap } from "./aceKingJack";
 import { getLegalMoves, type LegalMove } from "./legalMoves";
-import { becomesQualifiedAfterForwardMove, forwardDestination } from "./movement";
+import { forwardDestination } from "./movement";
 import { checkBackwardFour } from "./specialMoves";
 import { simulateSevenPlan } from "./sevenSimulation";
 import type { GameState, Marble, PlayerId, TeamId } from "./types";
@@ -19,7 +19,6 @@ export function executeMove(state: GameState, move: LegalMove): GameState {
   const legal = getLegalMoves(state, state.currentPlayer); if (!legal.some((c) => sameMove(c, move))) throw new Error("Illegal move");
   const player = state.currentPlayer;
   let next = cloneState(state);
-
   if (move.type === "SEVEN") {
     const simulated = simulateSevenPlan(state, player, move.parts);
     if (!simulated) throw new Error("Illegal seven plan");
@@ -28,15 +27,13 @@ export function executeMove(state: GameState, move: LegalMove): GameState {
     const marble = "marbleId" in move ? next.marbles.find((m) => m.id === move.marbleId) : undefined;
     if (move.type === "EXIT" && marble) { marble.zone = "TRACK"; marble.trackPosition = BASE_POSITION[marble.owner]; marble.finishPosition = null; marble.qualifiedForFinish = false; }
     if (move.type === "MOVE" && marble) {
-      const qualifies = becomesQualifiedAfterForwardMove(marble, move.steps);
       const destination = forwardDestination(marble, move.steps); if (!destination) throw new Error("Invalid destination");
-      if (destination.zone === "TRACK") { const victim = next.marbles.find((m) => m.id !== marble.id && m.zone === "TRACK" && m.trackPosition === destination.trackPosition); if (victim) sendHome(victim); marble.trackPosition = destination.trackPosition; marble.qualifiedForFinish = qualifies; }
+      if (destination.zone === "TRACK") { const victim = next.marbles.find((m) => m.id !== marble.id && m.zone === "TRACK" && m.trackPosition === destination.trackPosition); if (victim) sendHome(victim); marble.zone = "TRACK"; marble.trackPosition = destination.trackPosition; marble.finishPosition = null; }
       else { marble.zone = "FINISH"; marble.trackPosition = null; marble.finishPosition = destination.finishPosition; }
     }
-    if (move.type === "FOUR" && marble && marble.trackPosition !== null) { const check = checkBackwardFour(next, marble); applyCaptures(next, check.capturedMarbleIds); const startedOnOwnBase = marble.trackPosition === BASE_POSITION[marble.owner]; marble.trackPosition = (marble.trackPosition - 4 + TRACK_SIZE) % TRACK_SIZE; if (startedOnOwnBase) marble.qualifiedForFinish = true; }
+    if (move.type === "FOUR" && marble && marble.trackPosition !== null) { const check = checkBackwardFour(next, marble); applyCaptures(next, check.capturedMarbleIds); marble.trackPosition = (marble.trackPosition - 4 + TRACK_SIZE) % TRACK_SIZE; }
     if (move.type === "JACK") { const a = next.marbles.find((m) => m.id === move.marbleId)!; const b = next.marbles.find((m) => m.id === move.targetMarbleId)!; const [na, nb] = applyJackSwap(a, b); Object.assign(a, na); Object.assign(b, nb); }
   }
-
   removePlayedCard(next, player, move.cardId); next.winner = detectWinner(next); if (next.winner === null) advanceTurn(next); return next;
 }
 
