@@ -59,8 +59,6 @@ export function checkNormalForwardMove(
 
   if (marble.zone === "TRACK" && marble.trackPosition !== null) {
     const path = forwardTrackPath(marble.trackPosition, steps);
-
-    // If the destination enters FINISH, only the circuit portion matters.
     const trackPath = destination.zone === "FINISH"
       ? path.slice(0, Math.max(0, path.length - (destination.finishPosition + 1)))
       : path;
@@ -80,30 +78,19 @@ export function checkNormalForwardMove(
     const ownFinishMarbles = state.marbles.filter(
       (m) => m.owner === marble.owner && m.zone === "FINISH" && m.id !== marble.id,
     );
+    const start = marble.zone === "FINISH" && marble.finishPosition !== null
+      ? marble.finishPosition
+      : -1;
 
-    // The destination itself must always be free.
-    if (ownFinishMarbles.some((m) => m.finishPosition === destination.finishPosition)) {
+    // No overlap and no jumping anywhere in the arrival lane, including entry.
+    if (ownFinishMarbles.some(
+      (m) => m.finishPosition !== null && m.finishPosition > start && m.finishPosition <= destination.finishPosition,
+    )) {
       return {
         legal: false,
-        reason: "Arrival destination is occupied",
+        reason: "A marble blocks the arrival lane",
         capturedMarbleIds: [],
       };
-    }
-
-    // When a marble is already inside the arrival lane, it cannot jump another
-    // marble. A marble entering from the circuit may jump occupied earlier
-    // arrival positions, provided its destination is free.
-    if (marble.zone === "FINISH" && marble.finishPosition !== null) {
-      const start = marble.finishPosition;
-      if (ownFinishMarbles.some(
-        (m) => m.finishPosition !== null && m.finishPosition > start && m.finishPosition < destination.finishPosition,
-      )) {
-        return {
-          legal: false,
-          reason: "A marble blocks movement inside the arrival lane",
-          capturedMarbleIds: [],
-        };
-      }
     }
 
     return { legal: true, capturedMarbleIds: [] };
@@ -117,7 +104,6 @@ export function checkNormalForwardMove(
 
   if (!target) return { legal: true, capturedMarbleIds: [] };
 
-  // Every occupied base is protected, irrespective of team.
   if (isBasePosition(destination.trackPosition)) {
     return {
       legal: false,
