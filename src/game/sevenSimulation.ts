@@ -1,13 +1,11 @@
 import { TRACK_SIZE } from "./constants";
 import { forwardDestination } from "./movement";
 import { isBasePosition, isProtectedBaseOccupied, marbleAtTrackPosition } from "./rules";
-import { controlledOwner, type SevenPart, validateSevenPlan } from "./specialMoves";
+import { controlledOwner, type SevenPart } from "./specialMoves";
 import type { GameState, Marble, PlayerId } from "./types";
 
-function cloneState(state: GameState): GameState {
-  return { ...state, players: state.players.map((p) => ({ ...p, hand: [...p.hand] })), marbles: state.marbles.map((m) => ({ ...m })), deck: [...state.deck], discardPile: [...state.discardPile] };
-}
-function sendHome(m: Marble): void { m.zone = "HOME"; m.trackPosition = null; m.finishPosition = null; m.qualifiedForFinish = false; }
+function cloneState(state: GameState): GameState { return { ...state, players: state.players.map((p) => ({ ...p, hand: [...p.hand] })), marbles: state.marbles.map((m) => ({ ...m })), deck: [...state.deck], discardPile: [...state.discardPile] }; }
+function sendHome(m: Marble): void { m.zone = "HOME"; m.trackPosition = null; m.finishPosition = null; }
 
 function applyPart(state: GameState, marble: Marble, steps: number): boolean {
   const destination = forwardDestination(marble, steps);
@@ -36,15 +34,20 @@ function applyPart(state: GameState, marble: Marble, steps: number): boolean {
   return true;
 }
 
+/** Atomic simulation: null means the entire seven is rejected and the input state is untouched. */
 export function simulateSevenPlan(state: GameState, player: PlayerId, parts: SevenPart[]): GameState | null {
-  if (!validateSevenPlan(state, player, parts).legal) return null;
+  if (parts.length === 0 || parts.some((p) => !Number.isInteger(p.steps) || p.steps <= 0)) return null;
+  if (parts.reduce((sum, p) => sum + p.steps, 0) !== 7) return null;
+  const used = new Set<string>();
   const next = cloneState(state);
-  let controller = controlledOwner(next, player);
+
   for (const part of parts) {
+    if (used.has(part.marbleId)) return null;
+    used.add(part.marbleId);
+    const controller = controlledOwner(next, player);
     const marble = next.marbles.find((m) => m.id === part.marbleId);
     if (!marble || marble.owner !== controller || marble.zone === "HOME") return null;
     if (!applyPart(next, marble, part.steps)) return null;
-    controller = controlledOwner(next, player);
   }
   return next;
 }
