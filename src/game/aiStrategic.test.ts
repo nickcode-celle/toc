@@ -26,4 +26,14 @@ describe("strategic AI", () => {
     a.players[3].hand = [card("5")]; b.players[3].hand = [card("10"), card("K")];
     expect(chooseStrategicMove(a, 0)).toEqual(chooseStrategicMove(b, 0));
   });
+
+  it("does not use Jack to gain mid-board progress by gifting an enemy a near-finish position", () => {
+    const state=createInitialGameState();state.currentPlayer=2;state.players[2].hand=[card("J")];
+    const red=state.marbles.find(m=>m.owner===2)!;red.zone="TRACK";red.trackPosition=47;red.finishPosition=null;
+    const greenDanger=state.marbles.find(m=>m.owner===3)!;greenDanger.zone="TRACK";greenDanger.trackPosition=18;greenDanger.finishPosition=null;
+    const greenSafe=state.marbles.filter(m=>m.owner===3)[1];greenSafe.zone="TRACK";greenSafe.trackPosition=55;greenSafe.finishPosition=null;
+    const chosen=chooseStrategicMove(state,2);
+    expect(chosen.type).toBe("JACK");
+    if(chosen.type==="JACK")expect(chosen.targetMarbleId).toBe(greenSafe.id);
+  });
 });
