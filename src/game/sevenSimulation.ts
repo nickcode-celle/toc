@@ -2,10 +2,20 @@ import { TRACK_SIZE } from "./constants";
 import { forwardDestination } from "./movement";
 import { isBasePosition, isProtectedBaseOccupied, marbleAtTrackPosition } from "./rules";
 import { controlledOwner, type SevenPart } from "./specialMoves";
-import type { GameState, Marble, PlayerId } from "./types";
+import type { GameState, Marble, PlayerId, TeamId } from "./types";
 
 function cloneState(state: GameState): GameState { return { ...state, players: state.players.map((p) => ({ ...p, hand: [...p.hand] })), marbles: state.marbles.map((m) => ({ ...m })), deck: [...state.deck], discardPile: [...state.discardPile] }; }
 function sendHome(m: Marble): void { m.zone = "HOME"; m.trackPosition = null; m.finishPosition = null; }
+
+function teamOf(state: GameState, player: PlayerId): TeamId {
+  return state.players.find((p) => p.id === player)!.team;
+}
+
+function teamHasAllEightInFinish(state: GameState, team: TeamId): boolean {
+  const owners = state.players.filter((p) => p.team === team).map((p) => p.id);
+  const marbles = state.marbles.filter((m) => owners.includes(m.owner));
+  return marbles.length === 8 && marbles.every((m) => m.zone === "FINISH");
+}
 
 function applyPart(state: GameState, marble: Marble, steps: number): boolean {
   const destination = forwardDestination(marble, steps);
@@ -34,20 +44,29 @@ function applyPart(state: GameState, marble: Marble, steps: number): boolean {
   return true;
 }
 
-/** Atomic simulation: null means the entire seven is rejected and the input state is untouched. */
+/**
+ * Atomic simulation: null means the entire seven is rejected and the input state is untouched.
+ * A winning seven is legal only if the team's eighth marble reaches FINISH on the final
+ * part of the seven, after all seven points have been consumed.
+ */
 export function simulateSevenPlan(state: GameState, player: PlayerId, parts: SevenPart[]): GameState | null {
   if (parts.length === 0 || parts.some((p) => !Number.isInteger(p.steps) || p.steps <= 0)) return null;
   if (parts.reduce((sum, p) => sum + p.steps, 0) !== 7) return null;
   const used = new Set<string>();
   const next = cloneState(state);
+  const team = teamOf(next, player);
 
-  for (const part of parts) {
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
     if (used.has(part.marbleId)) return null;
     used.add(part.marbleId);
     const controller = controlledOwner(next, player);
     const marble = next.marbles.find((m) => m.id === part.marbleId);
     if (!marble || marble.owner !== controller || marble.zone === "HOME") return null;
     if (!applyPart(next, marble, part.steps)) return null;
+
+    // Once all eight team marbles are home, no remaining seven points may be spent.
+    if (index < parts.length - 1 && teamHasAllEightInFinish(next, team)) return null;
   }
   return next;
 }
