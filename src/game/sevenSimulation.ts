@@ -44,14 +44,10 @@ function applyPart(state: GameState, marble: Marble, steps: number): boolean {
   return true;
 }
 
-/**
- * Atomic simulation: null means the entire seven is rejected and the input state is untouched.
- * A winning seven is legal only if the team's eighth marble reaches FINISH on the final
- * part of the seven, after all seven points have been consumed.
- */
-export function simulateSevenPlan(state: GameState, player: PlayerId, parts: SevenPart[]): GameState | null {
-  if (parts.length === 0 || parts.some((p) => !Number.isInteger(p.steps) || p.steps <= 0)) return null;
-  if (parts.reduce((sum, p) => sum + p.steps, 0) !== 7) return null;
+/** Applies a legal-looking partial prefix of a Seven for UI preview only. */
+export function simulateSevenPrefix(state: GameState, player: PlayerId, parts: SevenPart[]): GameState | null {
+  if (parts.some((p) => !Number.isInteger(p.steps) || p.steps <= 0)) return null;
+  if (parts.reduce((sum, p) => sum + p.steps, 0) > 7) return null;
   const used = new Set<string>();
   const next = cloneState(state);
   const team = teamOf(next, player);
@@ -64,9 +60,17 @@ export function simulateSevenPlan(state: GameState, player: PlayerId, parts: Sev
     const marble = next.marbles.find((m) => m.id === part.marbleId);
     if (!marble || marble.owner !== controller || marble.zone === "HOME") return null;
     if (!applyPart(next, marble, part.steps)) return null;
-
-    // Once all eight team marbles are home, no remaining seven points may be spent.
     if (index < parts.length - 1 && teamHasAllEightInFinish(next, team)) return null;
   }
   return next;
+}
+
+/**
+ * Atomic simulation: null means the entire seven is rejected and the input state is untouched.
+ * A winning seven is legal only if the team's eighth marble reaches FINISH on the final
+ * part of the seven, after all seven points have been consumed.
+ */
+export function simulateSevenPlan(state: GameState, player: PlayerId, parts: SevenPart[]): GameState | null {
+  if (parts.length === 0 || parts.reduce((sum, p) => sum + p.steps, 0) !== 7) return null;
+  return simulateSevenPrefix(state, player, parts);
 }
