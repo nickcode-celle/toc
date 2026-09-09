@@ -16,11 +16,7 @@ describe("seven victory timing", () => {
       home("1-0", 1), home("1-1", 1), home("1-2", 1), home("1-3", 1),
       home("3-0", 3), home("3-1", 3), home("3-2", 3), home("3-3", 3),
     ];
-
-    const result = simulateSevenPlan(state, 0, [
-      { marbleId: "2-3", steps: 1 },
-      { marbleId: "2-0", steps: 6 },
-    ]);
+    const result = simulateSevenPlan(state, 0, [{ marbleId: "2-3", steps: 1 }, { marbleId: "2-0", steps: 6 }]);
     expect(result).toBeNull();
   });
 
@@ -28,20 +24,16 @@ describe("seven victory timing", () => {
     const state = createInitialGameState(); state.currentPlayer = 0;
     state.marbles = [
       finish("0-0", 0, 0), finish("0-1", 0, 1), finish("0-2", 0, 2), finish("0-3", 0, 3),
-      finish("2-0", 2, 0), finish("2-1", 2, 1), finish("2-2", 2, 3), track("2-3", 2, 41),
+      finish("2-0", 2, 0), finish("2-1", 2, 1), finish("2-2", 2, 3), track("2-3", 2, 25),
       home("1-0", 1), home("1-1", 1), home("1-2", 1), home("1-3", 1),
       home("3-0", 3), home("3-1", 3), home("3-2", 3), home("3-3", 3),
     ];
-
-    // Player 0 has already finished, so player 0 controls player 2.
-    // Move the two partner marbles inside arrival by 1 each, then spend the
-    // final 5 points from local case 9 (global 41) into finish position 0.
+    // Player 2's own gate is global 29. From global 25, five points enter finish 0.
     const result = simulateSevenPlan(state, 0, [
       { marbleId: "2-1", steps: 1 },
       { marbleId: "2-0", steps: 1 },
       { marbleId: "2-3", steps: 5 },
     ]);
-
     expect(result).not.toBeNull();
     expect(result!.marbles.filter((m) => m.owner === 0 || m.owner === 2).every((m) => m.zone === "FINISH")).toBe(true);
   });
