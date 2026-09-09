@@ -13,15 +13,15 @@ describe("baseline AI", () => {
     expect(legal).toContain(JSON.stringify(chooseBaselineMove(state)));
   });
 
-  it("strongly prefers immediate victory", () => {
+  it("prefers completing an arrival marble over a weaker circuit move", () => {
     const state = createInitialGameState(); state.currentPlayer = 0; state.players[0].hand = [card("A")];
-    for (const m of state.marbles.filter((m) => m.owner === 0 || m.owner === 2)) { m.zone = "FINISH"; m.trackPosition = null; m.finishPosition = 3; }
-    // Keep exactly one team marble one step from its final arrival slot.
-    const last = state.marbles.find((m) => m.owner === 0)!; last.zone = "FINISH"; last.finishPosition = 2;
-    // Free slot 3 for that owner by moving its duplicate fixture away.
-    const duplicate = state.marbles.find((m) => m.owner === 0 && m.id !== last.id && m.finishPosition === 3)!; duplicate.finishPosition = 0;
+    const finishing = state.marbles.find((m) => m.owner === 0 && m.id.endsWith("0"))!;
+    finishing.zone = "FINISH"; finishing.trackPosition = null; finishing.finishPosition = 2;
+    const circuit = state.marbles.find((m) => m.owner === 0 && m.id.endsWith("1"))!;
+    circuit.zone = "TRACK"; circuit.trackPosition = 5; circuit.finishPosition = null;
     const move = chooseBaselineMove(state);
     expect(move.type).toBe("MOVE");
+    if (move.type === "MOVE") expect(move.marbleId).toBe(finishing.id);
   });
 
   it("scores a won state above an unfinished state", () => {
