@@ -2,32 +2,32 @@
 
 Jeu de Toc numérique contre la machine.
 
-## État actuel
-
-Le prototype est maintenant jouable dans le navigateur :
+## Prototype jouable
 
 - 4 joueurs, 2 équipes de 2 ;
 - 1 joueur humain + 3 machines ;
-- cycle complet de cartes 5–4–4 avec échange secret entre partenaires ;
-- moteur de règles séparé de l'interface ;
-- déplacements normaux, sorties As/Roi, 4, 7 séquentiel et Valet ;
-- arrivées, bases, captures, défausse complète et contrôle du partenaire ;
-- victoire d'équipe, y compris la règle atomique du 7 ;
-- trois niveaux d'aide visuelle : Facile, Normal et Expert ;
-- IA stratégique avec anticipation d'un coup ;
+- cycle complet 5–4–4 et rotation du donneur ;
+- échange simultané et secret entre partenaires ;
+- moteur de règles indépendant de l'interface ;
+- As/Roi, déplacements standards, 4, 7 séquentiel et Valet ;
+- bases, captures, arrivées, défausse complète et contrôle du partenaire ;
+- victoire d'équipe avec règle atomique du 7 ;
+- modes d'assistance Facile, Normal et Expert ;
+- IA tactique respectant les informations cachées ;
+- échange IA orienté coopération avec le partenaire ;
 - interface responsive ordinateur/tablette/mobile ;
-- carte supérieure de la défausse visible pendant le cycle.
+- défausse publique limitée à sa carte supérieure ;
+- nouvelle partie et écran victoire/défaite ;
+- manifeste d'installation mobile et fonctionnement hors connexion via service worker.
 
-## Lancer le jeu
+## Lancer localement
 
 ```bash
 npm install
 npm run dev
 ```
 
-Puis ouvrir l'adresse locale indiquée par Vite.
-
-## Vérification
+## Validation
 
 ```bash
 npm run typecheck
@@ -35,13 +35,19 @@ npm test
 npm run build
 ```
 
-La CI GitHub exécute automatiquement ces trois validations à chaque modification de `main`.
+La CI exécute automatiquement ces validations à chaque modification de `main`.
+
+## Mise en ligne
+
+Le dépôt contient un workflow GitHub Pages et Vite est configuré avec la base `/toc/`. Le déploiement devient opérationnel dès que GitHub Pages est autorisé pour le dépôt dans ses paramètres.
 
 ## Architecture
 
 - `src/game/` : moteur, règles, déroulement des donnes et IA ;
 - `src/main.tsx` : interface et interactions joueur ;
 - `src/ui.css` : plateau, cartes, billes et adaptation mobile ;
-- `.github/workflows/test.yml` : validation automatique.
+- `public/manifest.webmanifest` et `public/sw.js` : installation et hors connexion ;
+- `.github/workflows/test.yml` : validation automatique ;
+- `.github/workflows/pages.yml` : publication web.
 
-Le moteur reste indépendant de l'affichage afin de permettre l'amélioration de l'IA, une future interface mobile native ou un mode multijoueur sans réécrire les règles.
+Le moteur reste indépendant de l'affichage afin de permettre une IA plus avancée et un futur mode multijoueur sans réécrire les règles.
