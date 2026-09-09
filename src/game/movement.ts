@@ -18,12 +18,7 @@ export function localPosition(owner: PlayerId, trackPosition: number): number {
   return clockwiseDistance(BASE_POSITION[owner], trackPosition);
 }
 
-/**
- * Forward arrival rule: no lap/qualification flag is required.
- * Whenever a forward move reaches/passes the owner's case 13 toward the
- * arrival lane, it enters if the complete value fits in the four arrival
- * positions. If the value is too large, the full move continues on circuit.
- */
+/** No lap/qualification state exists: arrival depends only on current geometry. */
 export function forwardDestination(marble: Marble, steps: number): Destination | null {
   if (!Number.isInteger(steps) || steps <= 0) return null;
   if (marble.zone === "HOME") return null;
@@ -36,7 +31,6 @@ export function forwardDestination(marble: Marble, steps: number): Destination |
 
   if (marble.trackPosition === null) return null;
   const local = localPosition(marble.owner, marble.trackPosition);
-
   if (local <= FINISH_GATE_LOCAL_POSITION) {
     const stepsToFirstFinish = FINISH_GATE_LOCAL_POSITION - local + 1;
     const finishIndex = steps - stepsToFirstFinish;
@@ -44,11 +38,5 @@ export function forwardDestination(marble: Marble, steps: number): Destination |
       return { zone: "FINISH", finishPosition: finishIndex };
     }
   }
-
   return { zone: "TRACK", trackPosition: (marble.trackPosition + steps) % TRACK_SIZE };
-}
-
-/** Legacy compatibility: arrival no longer depends on qualification. */
-export function becomesQualifiedAfterForwardMove(marble: Marble, _steps: number): boolean {
-  return marble.qualifiedForFinish;
 }
