@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialGameState } from "./state";
-import { advanceMachines, createMachineGame, submitHumanExchange } from "./machineGame";
+import { advanceMachines, createMachineGame, submitHumanExchange, submitHumanMove } from "./machineGame";
+import { getLegalMoves } from "./legalMoves";
 
 describe("machine game controller", () => {
   it("starts with the mandatory simultaneous exchange", () => {
@@ -22,5 +23,26 @@ describe("machine game controller", () => {
     game = submitHumanExchange(game, game.state.players[0].hand[0].id);
     if (game.phase === "MACHINE_TURN") game = advanceMachines(game);
     expect(["HUMAN_TURN", "EXCHANGE", "GAME_OVER"]).toContain(game.phase);
+  });
+
+  it("automatically deals the next hand after the last card is played", () => {
+    let game = createMachineGame(createInitialGameState(), 0);
+    game = submitHumanExchange(game, game.state.players[0].hand[0].id);
+    game = {
+      ...game,
+      phase: "HUMAN_TURN",
+      state: {
+        ...game.state,
+        currentPlayer: 0,
+        dealNumber: 0,
+        players: game.state.players.map((p) => p.id === 0 ? { ...p, hand: [p.hand[0]], hasDiscardedHand: false } : { ...p, hand: [], hasDiscardedHand: false }),
+      },
+    };
+    const move = getLegalMoves(game.state, 0)[0];
+    expect(move).toBeTruthy();
+    game = submitHumanMove(game, move);
+    expect(game.phase).toBe("EXCHANGE");
+    expect(game.state.dealNumber).toBe(1);
+    expect(game.state.players.every((p) => p.hand.length === 4)).toBe(true);
   });
 });
