@@ -18,7 +18,6 @@ function rankValue(card: Card): number {
     case "2": return 15;
   }
 }
-
 function progress(state: GameState, owner: PlayerId): number {
   return state.marbles.filter(m => m.owner === owner).reduce((sum, m) => {
     if (m.zone === "FINISH") return sum + 80 + (m.finishPosition ?? 0) * 5;
@@ -26,12 +25,6 @@ function progress(state: GameState, owner: PlayerId): number {
     return sum;
   }, 0);
 }
-
-/**
- * Secret partner exchange based only on the acting player's hand and public board.
- * The machine can support a partner that is close to finishing without reading that
- * partner's hidden cards.
- */
 export function chooseBaselineExchange(state: GameState, player: PlayerId): string {
   const hand = state.players.find(p => p.id === player)?.hand;
   if (!hand?.length) throw new Error("No card available for exchange");
@@ -41,18 +34,24 @@ export function chooseBaselineExchange(state: GameState, player: PlayerId): stri
   const partnerFinished = state.marbles.filter(m => m.owner === partner && m.zone === "FINISH").length;
   const partnerAhead = progress(state, partner) > progress(state, player);
 
+  // A visibly advanced partner who still has marbles at home gets an exit card
+  // whenever we can spare one. Prefer Ace over King because it is more flexible.
+  if (partnerAhead && partnerHome > 0) {
+    const ace = hand.find(c => c.rank === "A"); if (ace) return ace.id;
+    const king = hand.find(c => c.rank === "K"); if (king) return king.id;
+  }
+  // Near completion, a Seven is often the strongest cooperative gift.
+  if (partnerAhead && partnerFinished >= 2) {
+    const seven = hand.find(c => c.rank === "7"); if (seven) return seven.id;
+  }
+
   function keepValue(card: Card): number {
     let value = rankValue(card);
-    // If we no longer need exits ourselves, A/K become excellent support cards.
     if (ownHome === 0 && (card.rank === "A" || card.rank === "K")) value -= 35;
-    // If partner still has marbles at home, deliberately make exit cards easier to give.
-    if (partnerHome > 0 && (card.rank === "A" || card.rank === "K")) value -= partnerAhead ? 65 : 40;
-    // Seven is especially valuable to a partner approaching completion.
+    if (partnerHome > 0 && (card.rank === "A" || card.rank === "K")) value -= 40;
     if (partnerFinished >= 2 && card.rank === "7") value -= 45;
-    // Jack/4 remain tactical resources unless partner is clearly the advanced hand.
     if (partnerAhead && (card.rank === "J" || card.rank === "4")) value -= 18;
     return value;
   }
-
   return [...hand].sort((a, b) => keepValue(a) - keepValue(b) || a.id.localeCompare(b.id))[0].id;
 }
