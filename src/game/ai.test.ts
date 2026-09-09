@@ -13,15 +13,12 @@ describe("baseline AI", () => {
     expect(legal).toContain(JSON.stringify(chooseBaselineMove(state)));
   });
 
-  it("prefers completing an arrival marble over a weaker circuit move", () => {
+  it("prefers getting a marble out of HOME when that improves the evaluated position", () => {
     const state = createInitialGameState(); state.currentPlayer = 0; state.players[0].hand = [card("A")];
-    const finishing = state.marbles.find((m) => m.owner === 0 && m.id.endsWith("0"))!;
-    finishing.zone = "FINISH"; finishing.trackPosition = null; finishing.finishPosition = 2;
-    const circuit = state.marbles.find((m) => m.owner === 0 && m.id.endsWith("1"))!;
+    const circuit = state.marbles.find((m) => m.owner === 0 && m.id.endsWith("0"))!;
     circuit.zone = "TRACK"; circuit.trackPosition = 5; circuit.finishPosition = null;
     const move = chooseBaselineMove(state);
-    expect(move.type).toBe("MOVE");
-    if (move.type === "MOVE") expect(move.marbleId).toBe(finishing.id);
+    expect(move.type).toBe("EXIT");
   });
 
   it("scores a won state above an unfinished state", () => {
