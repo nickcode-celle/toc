@@ -1,0 +1,12 @@
+{
+  "name": "TOC · contre la machine",
+  "short_name": "TOC",
+  "description": "Jeu de Toc contre trois joueurs contrôlés par la machine.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#15110d",
+  "theme_color": "#15110d",
+  "lang": "fr"
+}
