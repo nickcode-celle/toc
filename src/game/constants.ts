@@ -1,28 +1,23 @@
 import type { CardRank, PlayerId } from "./types";
 
-export const TRACK_SIZE = 64;
+export const TRACK_SIZE = 60;
 export const FINISH_SIZE = 4;
 export const MARBLES_PER_PLAYER = 4;
 
-/**
- * The physical board has 4 bases plus 15 numbered holes between each base.
- * Positions increase in the direction of play.
- */
+/** Physical board: 15 positions per colour sector. The coloured base IS case 15. */
 export const BASE_POSITION: Record<PlayerId, number> = {
   0: 0,
-  1: 16,
-  2: 32,
-  3: 48,
+  1: 15,
+  2: 30,
+  3: 45,
 };
 
 /**
- * A player's own numbered sector is the 15-hole sector immediately BEFORE
- * their base. Therefore own case 13 is three track positions before the base:
- * relative position 61 on the 64-position circuit. From own 13, +1 enters
- * arrival position 1; own 12 +2 does the same. Cases 14/15 have passed the
- * arrival branch and continue around the circuit.
+ * The arrival branch is after the owner's case 13. With the base being case 15,
+ * own case 13 is two positions before the base: local position 58 on a 60-hole ring.
+ * Thus own 12 +1 reaches 13, and only a move starting from/passing 13 can enter.
  */
-export const FINISH_GATE_LOCAL_POSITION = 61;
+export const FINISH_GATE_LOCAL_POSITION = 58;
 
 export const CARD_FORWARD_VALUE: Partial<Record<CardRank, number>> = {
   A: 1,
