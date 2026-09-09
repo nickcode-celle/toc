@@ -17,8 +17,6 @@ describe("seven victory timing", () => {
       home("3-0", 3), home("3-1", 3), home("3-2", 3), home("3-3", 3),
     ];
 
-    // Player 2 case 13 is global 45. One point finishes the team's eighth marble,
-    // leaving six points: the whole seven must therefore be illegal.
     const result = simulateSevenPlan(state, 0, [
       { marbleId: "2-3", steps: 1 },
       { marbleId: "2-0", steps: 6 },
@@ -26,26 +24,24 @@ describe("seven victory timing", () => {
     expect(result).toBeNull();
   });
 
-  it("allows victory when the eighth team marble reaches finish with the final seven points", () => {
+  it("allows victory when the eighth team marble enters finish on the final point", () => {
     const state = createInitialGameState(); state.currentPlayer = 0;
     state.marbles = [
       finish("0-0", 0, 0), finish("0-1", 0, 1), finish("0-2", 0, 2), finish("0-3", 0, 3),
-      finish("2-0", 2, 0), finish("2-1", 2, 1), finish("2-2", 2, 2), track("2-3", 2, 39),
+      finish("2-0", 2, 0), finish("2-1", 2, 1), finish("2-2", 2, 3), track("2-3", 2, 41),
       home("1-0", 1), home("1-1", 1), home("1-2", 1), home("1-3", 1),
       home("3-0", 3), home("3-1", 3), home("3-2", 3), home("3-3", 3),
     ];
 
-    // Player 2 base is 32, so global 39 is local 7. Seven points end on case 14,
-    // not in finish; make this a split where the final part is the winning point.
-    const mover = state.marbles.find((m) => m.id === "2-3")!;
-    mover.trackPosition = 45;
-    const helper = state.marbles.find((m) => m.id === "2-2")!;
-    helper.zone = "TRACK"; helper.trackPosition = 20; helper.finishPosition = null;
-
+    // Player 0 has already finished, so player 0 controls player 2.
+    // Move the two partner marbles inside arrival by 1 each, then spend the
+    // final 5 points from local case 9 (global 41) into finish position 0.
     const result = simulateSevenPlan(state, 0, [
-      { marbleId: "2-2", steps: 6 },
-      { marbleId: "2-3", steps: 1 },
+      { marbleId: "2-1", steps: 1 },
+      { marbleId: "2-0", steps: 1 },
+      { marbleId: "2-3", steps: 5 },
     ]);
+
     expect(result).not.toBeNull();
     expect(result!.marbles.filter((m) => m.owner === 0 || m.owner === 2).every((m) => m.zone === "FINISH")).toBe(true);
   });
