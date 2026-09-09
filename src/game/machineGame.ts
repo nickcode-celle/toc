@@ -36,7 +36,8 @@ export function advanceMachines(game: MachineGame, maxMachineTurns = 100): Machi
     const state=moves.length?executeMove(next.state,chooseStrategicMove(next.state,player)):discardWholeHand(next.state,lastCardVisibleOnDiscard(next.state,player));
     next={...next,state,phase:phaseFor(state,next.humanPlayer)};count++;
   }
-  if(count>=maxMachineTurns&&next.phase==="MACHINE_TURN")throw new Error("Machine turn guard exceeded");
+  // Reaching the requested turn limit is intentional when the UI advances
+  // machines one at a time (for example to animate a 2-second thinking delay).
   if(next.phase==="HUMAN_TURN"&&handIsOver(next.state)){const state=prepareNextDeal(next.state);return {...next,state,phase:"EXCHANGE",pendingExchangeChoices:{}};}
   return next;
 }
