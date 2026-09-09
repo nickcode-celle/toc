@@ -11,11 +11,6 @@ export interface Marble {
   trackPosition: number | null;
   /** Arrival slot, 0..3, when zone === FINISH. */
   finishPosition: number | null;
-  /**
-   * True once the marble has reached the part of its own sector from which
-   * it is allowed to enter its arrival lane on a forward move.
-   */
-  qualifiedForFinish: boolean;
 }
 
 export type CardRank =
