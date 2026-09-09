@@ -2,30 +2,11 @@ import { describe, expect, it } from "vitest";
 import { simulateSevenPlan } from "./sevenSimulation";
 import { createInitialGameState } from "./state";
 import type { Marble } from "./types";
-
-function finish(id: string, owner: 0 | 1 | 2 | 3, position: number): Marble { return { id, owner, zone: "FINISH", trackPosition: null, finishPosition: position }; }
-function track(id: string, owner: 0 | 1 | 2 | 3, position: number): Marble { return { id, owner, zone: "TRACK", trackPosition: position, finishPosition: null }; }
-function home(id: string, owner: 0 | 1 | 2 | 3): Marble { return { id, owner, zone: "HOME", trackPosition: null, finishPosition: null }; }
-
-describe("seven sequential control", () => {
-  it("can finish the fourth own marble then spend remaining points on teammate", () => {
-    const state = createInitialGameState(); state.currentPlayer = 0;
-    state.marbles = [finish("0-0", 0, 1), finish("0-1", 0, 2), finish("0-2", 0, 3), track("0-3", 0, 60), track("2-0", 2, 20), home("2-1", 2), home("2-2", 2), home("2-3", 2), home("1-0", 1), home("1-1", 1), home("1-2", 1), home("1-3", 1), home("3-0", 3), home("3-1", 3), home("3-2", 3), home("3-3", 3)];
-    const result = simulateSevenPlan(state, 0, [{ marbleId: "0-3", steps: 2 }, { marbleId: "2-0", steps: 5 }]);
-    expect(result).not.toBeNull(); expect(result!.marbles.find((m) => m.id === "0-3")?.zone).toBe("FINISH"); expect(result!.marbles.find((m) => m.id === "2-0")?.trackPosition).toBe(25);
-  });
-  it("cannot use teammate before the fourth own marble is finished", () => {
-    const state = createInitialGameState(); state.currentPlayer = 0;
-    state.marbles = [finish("0-0", 0, 0), finish("0-1", 0, 1), track("0-2", 0, 5), track("0-3", 0, 60), track("2-0", 2, 20), home("2-1", 2), home("2-2", 2), home("2-3", 2), home("1-0", 1), home("1-1", 1), home("1-2", 1), home("1-3", 1), home("3-0", 3), home("3-1", 3), home("3-2", 3), home("3-3", 3)];
-    expect(simulateSevenPlan(state, 0, [{ marbleId: "0-3", steps: 2 }, { marbleId: "2-0", steps: 5 }])).toBeNull();
-  });
-  it("cannot use the same marble twice", () => { const state = createInitialGameState(); expect(simulateSevenPlan(state, 0, [{ marbleId: "0-0", steps: 3 }, { marbleId: "0-0", steps: 4 }])).toBeNull(); });
-  it("rolls back the entire seven when a later part is illegal", () => {
-    const state = createInitialGameState(); state.currentPlayer = 0;
-    const a = state.marbles.find((m) => m.id === "0-0")!; a.zone = "TRACK"; a.trackPosition = 5;
-    const b = state.marbles.find((m) => m.id === "0-1")!; b.zone = "TRACK"; b.trackPosition = 14;
-    const blocker = state.marbles.find((m) => m.id === "1-0")!; blocker.zone = "TRACK"; blocker.trackPosition = 16;
-    const result = simulateSevenPlan(state, 0, [{ marbleId: "0-0", steps: 3 }, { marbleId: "0-1", steps: 4 }]);
-    expect(result).toBeNull(); expect(a.trackPosition).toBe(5); expect(b.trackPosition).toBe(14); expect(blocker.trackPosition).toBe(16);
-  });
+function finish(id:string,owner:0|1|2|3,position:number):Marble{return{id,owner,zone:"FINISH",trackPosition:null,finishPosition:position}}function track(id:string,owner:0|1|2|3,position:number):Marble{return{id,owner,zone:"TRACK",trackPosition:position,finishPosition:null}}function home(id:string,owner:0|1|2|3):Marble{return{id,owner,zone:"HOME",trackPosition:null,finishPosition:null}}
+describe("seven sequential control",()=>{
+ it("can finish the fourth own marble then spend remaining points on teammate",()=>{const state=createInitialGameState();state.currentPlayer=0;state.marbles=[finish("0-0",0,1),finish("0-1",0,2),finish("0-2",0,3),track("0-3",0,58),track("2-0",2,20),home("2-1",2),home("2-2",2),home("2-3",2),home("1-0",1),home("1-1",1),home("1-2",1),home("1-3",1),home("3-0",3),home("3-1",3),home("3-2",3),home("3-3",3)];const result=simulateSevenPlan(state,0,[{marbleId:"0-3",steps:1},{marbleId:"2-0",steps:6}]);expect(result).not.toBeNull();expect(result!.marbles.find(m=>m.id==="0-3")?.zone).toBe("FINISH");expect(result!.marbles.find(m=>m.id==="2-0")?.trackPosition).toBe(26)});
+ it("can split seven between two ordinary controlled marbles",()=>{const state=createInitialGameState();state.currentPlayer=0;const a=state.marbles.find(m=>m.id==="0-0")!;a.zone="TRACK";a.trackPosition=5;const b=state.marbles.find(m=>m.id==="0-1")!;b.zone="TRACK";b.trackPosition=20;const result=simulateSevenPlan(state,0,[{marbleId:a.id,steps:3},{marbleId:b.id,steps:4}]);expect(result).not.toBeNull();expect(result!.marbles.find(m=>m.id===a.id)?.trackPosition).toBe(8);expect(result!.marbles.find(m=>m.id===b.id)?.trackPosition).toBe(24)});
+ it("cannot use teammate before the fourth own marble is finished",()=>{const state=createInitialGameState();state.currentPlayer=0;state.marbles=[finish("0-0",0,0),finish("0-1",0,1),track("0-2",0,5),track("0-3",0,58),track("2-0",2,20),home("2-1",2),home("2-2",2),home("2-3",2),home("1-0",1),home("1-1",1),home("1-2",1),home("1-3",1),home("3-0",3),home("3-1",3),home("3-2",3),home("3-3",3)];expect(simulateSevenPlan(state,0,[{marbleId:"0-3",steps:1},{marbleId:"2-0",steps:6}])).toBeNull()});
+ it("cannot use the same marble twice",()=>{const state=createInitialGameState();expect(simulateSevenPlan(state,0,[{marbleId:"0-0",steps:3},{marbleId:"0-0",steps:4}])).toBeNull()});
+ it("rolls back the entire seven when a later part is illegal",()=>{const state=createInitialGameState();state.currentPlayer=0;const a=state.marbles.find(m=>m.id==="0-0")!;a.zone="TRACK";a.trackPosition=5;const b=state.marbles.find(m=>m.id==="0-1")!;b.zone="TRACK";b.trackPosition=13;const blocker=state.marbles.find(m=>m.id==="1-0")!;blocker.zone="TRACK";blocker.trackPosition=15;const result=simulateSevenPlan(state,0,[{marbleId:"0-0",steps:3},{marbleId:"0-1",steps:4}]);expect(result).toBeNull();expect(a.trackPosition).toBe(5);expect(b.trackPosition).toBe(13);expect(blocker.trackPosition).toBe(15)});
 });
