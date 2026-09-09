@@ -1,20 +1,47 @@
 # TOC
 
-Prototype du Jeu de Toc contre la machine.
+Jeu de Toc numérique contre la machine.
 
-## Objectif de la première version
+## État actuel
 
-- 4 joueurs, 2 équipes de 2
-- 1 joueur humain + 3 joueurs contrôlés par la machine
-- moteur de règles indépendant de l'interface
-- règles de déplacement conformes à la variante définie pour ce projet
-- IA ajoutée progressivement après validation du moteur
+Le prototype est maintenant jouable dans le navigateur :
+
+- 4 joueurs, 2 équipes de 2 ;
+- 1 joueur humain + 3 machines ;
+- cycle complet de cartes 5–4–4 avec échange secret entre partenaires ;
+- moteur de règles séparé de l'interface ;
+- déplacements normaux, sorties As/Roi, 4, 7 séquentiel et Valet ;
+- arrivées, bases, captures, défausse complète et contrôle du partenaire ;
+- victoire d'équipe, y compris la règle atomique du 7 ;
+- trois niveaux d'aide visuelle : Facile, Normal et Expert ;
+- IA stratégique avec anticipation d'un coup ;
+- interface responsive ordinateur/tablette/mobile ;
+- carte supérieure de la défausse visible pendant le cycle.
+
+## Lancer le jeu
+
+```bash
+npm install
+npm run dev
+```
+
+Puis ouvrir l'adresse locale indiquée par Vite.
+
+## Vérification
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+La CI GitHub exécute automatiquement ces trois validations à chaque modification de `main`.
 
 ## Architecture
 
-- `src/game/types.ts` : types du jeu
-- `src/game/constants.ts` : constantes du plateau et des cartes
-- `src/game/state.ts` : création de l'état initial
-- `src/game/movement.ts` : logique de déplacement
+- `src/game/` : moteur, règles, déroulement des donnes et IA ;
+- `src/main.tsx` : interface et interactions joueur ;
+- `src/ui.css` : plateau, cartes, billes et adaptation mobile ;
+- `.github/workflows/test.yml` : validation automatique.
 
-Le moteur est volontairement séparé de l'affichage afin de pouvoir tester chaque règle avant de construire le plateau graphique.
+Le moteur reste indépendant de l'affichage afin de permettre l'amélioration de l'IA, une future interface mobile native ou un mode multijoueur sans réécrire les règles.
