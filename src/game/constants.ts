@@ -5,8 +5,8 @@ export const FINISH_SIZE = 4;
 export const MARBLES_PER_PLAYER = 4;
 
 /**
- * Global base positions in clockwise order.
- * Player 0 = red, 1 = green, 2 = blue, 3 = yellow.
+ * The physical board has 4 bases plus 15 numbered holes between each base.
+ * Positions increase in the direction of play.
  */
 export const BASE_POSITION: Record<PlayerId, number> = {
   0: 0,
@@ -16,10 +16,13 @@ export const BASE_POSITION: Record<PlayerId, number> = {
 };
 
 /**
- * Local sector positions 1..15 follow each base clockwise.
- * Local position 13 is the arrival decision point for that colour.
+ * A player's own numbered sector is the 15-hole sector immediately BEFORE
+ * their base. Therefore own case 13 is three track positions before the base:
+ * relative position 61 on the 64-position circuit. From own 13, +1 enters
+ * arrival position 1; own 12 +2 does the same. Cases 14/15 have passed the
+ * arrival branch and continue around the circuit.
  */
-export const FINISH_GATE_LOCAL_POSITION = 13;
+export const FINISH_GATE_LOCAL_POSITION = 61;
 
 export const CARD_FORWARD_VALUE: Partial<Record<CardRank, number>> = {
   A: 1,
