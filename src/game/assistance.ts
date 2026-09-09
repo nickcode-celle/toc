@@ -32,17 +32,14 @@ export function getAssistanceHints(state: GameState, mode: AssistanceMode, selec
     if (selectedCard?.rank === "J") hints.jackMarbleIds = hints.playableMarbleIds;
     if ((selectedCard?.rank === "A" || selectedCard?.rank === "K")) {
       const exit = cardMoves.find((m) => m.type === "EXIT");
-      if (exit && exit.type === "EXIT") hints.homeExitHintMarbleId = exit.marbleId; // one visual hint only; every legal HOME marble remains selectable
+      if (exit && exit.type === "EXIT") hints.homeExitHintMarbleId = exit.marbleId;
     }
   }
 
-  if (selectedCard?.rank === "7" && mode !== "EXPERT") hints.sevenRemaining = Math.max(0, 7 - sevenUsedPoints);
+  if (selectedCard?.rank === "7") hints.sevenRemaining = Math.max(0, 7 - sevenUsedPoints);
   if (!selectedMarbleId || !selectedCard) return hints;
 
-  // NORMAL highlights only classic/four final destinations. Seven and Jack deliberately reveal nothing.
-  if (selectedCard.rank === "7" || selectedCard.rank === "J") {
-    if (mode === "NORMAL") return hints;
-  }
+  if ((selectedCard.rank === "7" || selectedCard.rank === "J") && mode === "NORMAL") return hints;
 
   const marble = state.marbles.find((m) => m.id === selectedMarbleId);
   if (!marble) return hints;
