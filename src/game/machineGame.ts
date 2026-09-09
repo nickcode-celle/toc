@@ -1,5 +1,5 @@
 import { chooseBaselineExchange } from "./aiExchange";
-import { chooseBaselineMove } from "./ai";
+import { chooseStrategicMove } from "./aiStrategic";
 import { exchangePartnerCards, prepareNextDeal, startDeckCycle } from "./deck";
 import { discardWholeHand, executeMove } from "./executor";
 import { handIsOver, lastCardVisibleOnDiscard } from "./gameLoop";
@@ -7,71 +7,36 @@ import { getLegalMoves, type LegalMove } from "./legalMoves";
 import type { GameState, PlayerId } from "./types";
 
 export type MachineGamePhase = "EXCHANGE" | "HUMAN_TURN" | "MACHINE_TURN" | "GAME_OVER";
-
-export interface MachineGame {
-  state: GameState;
-  humanPlayer: PlayerId;
-  phase: MachineGamePhase;
-  pendingExchangeChoices: Partial<Record<PlayerId, string>>;
-}
-
-function phaseFor(state: GameState, human: PlayerId): MachineGamePhase {
-  if (state.winner !== null) return "GAME_OVER";
-  return state.currentPlayer === human ? "HUMAN_TURN" : "MACHINE_TURN";
-}
-
-export function createMachineGame(initialState: GameState, humanPlayer: PlayerId = 0): MachineGame {
-  return { state: startDeckCycle(initialState), humanPlayer, phase: "EXCHANGE", pendingExchangeChoices: {} };
-}
-
-/** The human sees only their hand when choosing; machine choices are committed secretly before reveal. */
+export interface MachineGame { state: GameState; humanPlayer: PlayerId; phase: MachineGamePhase; pendingExchangeChoices: Partial<Record<PlayerId, string>>; }
+function phaseFor(state: GameState, human: PlayerId): MachineGamePhase { if (state.winner !== null) return "GAME_OVER"; return state.currentPlayer === human ? "HUMAN_TURN" : "MACHINE_TURN"; }
+export function createMachineGame(initialState: GameState, humanPlayer: PlayerId = 0): MachineGame { return { state: startDeckCycle(initialState), humanPlayer, phase: "EXCHANGE", pendingExchangeChoices: {} }; }
 export function submitHumanExchange(game: MachineGame, cardId: string): MachineGame {
   if (game.phase !== "EXCHANGE") throw new Error("Exchange is not active");
   const humanHand = game.state.players.find((p) => p.id === game.humanPlayer)?.hand ?? [];
   if (!humanHand.some((c) => c.id === cardId)) throw new Error("Exchange card must belong to human hand");
   const choices = {} as Record<PlayerId, string>;
-  for (const p of [0, 1, 2, 3] as PlayerId[]) choices[p] = p === game.humanPlayer ? cardId : chooseBaselineExchange(game.state, p);
+  for (const p of [0,1,2,3] as PlayerId[]) choices[p] = p === game.humanPlayer ? cardId : chooseBaselineExchange(game.state, p);
   const state = exchangePartnerCards(game.state, choices);
   return { ...game, state, phase: phaseFor(state, game.humanPlayer), pendingExchangeChoices: {} };
 }
-
 export function submitHumanMove(game: MachineGame, move: LegalMove): MachineGame {
   if (game.phase !== "HUMAN_TURN" || game.state.currentPlayer !== game.humanPlayer) throw new Error("Not the human turn");
-  const state = executeMove(game.state, move);
-  return { ...game, state, phase: phaseFor(state, game.humanPlayer) };
+  const state = executeMove(game.state, move); return { ...game, state, phase: phaseFor(state, game.humanPlayer) };
 }
-
 export function submitHumanDiscard(game: MachineGame, visibleCardId?: string): MachineGame {
   if (game.phase !== "HUMAN_TURN" || game.state.currentPlayer !== game.humanPlayer) throw new Error("Not the human turn");
   if (getLegalMoves(game.state).length > 0) throw new Error("Human still has a legal move");
-  const state = discardWholeHand(game.state, visibleCardId);
-  return { ...game, state, phase: phaseFor(state, game.humanPlayer) };
+  const state = discardWholeHand(game.state, visibleCardId); return { ...game, state, phase: phaseFor(state, game.humanPlayer) };
 }
-
-/**
- * Runs machine turns until the human must act, a new exchange is required, or the game ends.
- * The machines use only legal engine actions; discarded players are skipped by the executor.
- */
 export function advanceMachines(game: MachineGame, maxMachineTurns = 100): MachineGame {
-  let next = game;
-  let count = 0;
-  while (next.phase === "MACHINE_TURN" && count < maxMachineTurns) {
-    if (handIsOver(next.state)) {
-      const state = prepareNextDeal(next.state);
-      return { ...next, state, phase: "EXCHANGE", pendingExchangeChoices: {} };
-    }
-    const player = next.state.currentPlayer;
-    const moves = getLegalMoves(next.state, player);
-    const state = moves.length
-      ? executeMove(next.state, chooseBaselineMove(next.state, player))
-      : discardWholeHand(next.state, lastCardVisibleOnDiscard(next.state, player));
-    next = { ...next, state, phase: phaseFor(state, next.humanPlayer) };
-    count += 1;
+  let next=game,count=0;
+  while(next.phase==="MACHINE_TURN"&&count<maxMachineTurns){
+    if(handIsOver(next.state)){const state=prepareNextDeal(next.state);return {...next,state,phase:"EXCHANGE",pendingExchangeChoices:{}};}
+    const player=next.state.currentPlayer,moves=getLegalMoves(next.state,player);
+    const state=moves.length?executeMove(next.state,chooseStrategicMove(next.state,player)):discardWholeHand(next.state,lastCardVisibleOnDiscard(next.state,player));
+    next={...next,state,phase:phaseFor(state,next.humanPlayer)};count++;
   }
-  if (count >= maxMachineTurns && next.phase === "MACHINE_TURN") throw new Error("Machine turn guard exceeded");
-  if (next.phase === "HUMAN_TURN" && handIsOver(next.state)) {
-    const state = prepareNextDeal(next.state);
-    return { ...next, state, phase: "EXCHANGE", pendingExchangeChoices: {} };
-  }
+  if(count>=maxMachineTurns&&next.phase==="MACHINE_TURN")throw new Error("Machine turn guard exceeded");
+  if(next.phase==="HUMAN_TURN"&&handIsOver(next.state)){const state=prepareNextDeal(next.state);return {...next,state,phase:"EXCHANGE",pendingExchangeChoices:{}};}
   return next;
 }
