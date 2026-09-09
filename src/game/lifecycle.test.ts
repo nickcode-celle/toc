@@ -54,6 +54,7 @@ describe("exchange, discard and skipped players", () => {
 
   it("lets a full-hand discard choose the only visible top card", () => {
     const state = createInitialGameState();
+    state.currentPlayer = 0;
     // 2/3/4 cannot leave HOME, so this hand has no legal move and must be discarded.
     const hand: Card[] = createDeck().filter((c) => c.rank === "2" || c.rank === "3" || c.rank === "4").slice(0, 3);
     state.players[0].hand = hand;
